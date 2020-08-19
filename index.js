@@ -1,5 +1,6 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const userRepo = require("./repositories/users.js");
 
 const app = express();
 // Using this use method, all the route handler in our project file can us this bodyParser function.
@@ -38,8 +39,19 @@ app.get("/", (req, res) => {
 // };
 
 // Using bodyParser Middleware npm library.
-app.post("/", (req, res) => {
-  console.log(req.body);
+app.post("/", async (req, res) => {
+  const { email, password, passwordConformation } = req.body;
+
+  // Checking for existing user.
+  const existingUser = await userRepo.getOneBy({ email });
+  if (existingUser) {
+    return res.send("User already exists");
+  }
+
+  // checking for password match.
+  if (password !== passwordConformation) {
+    return res.send("Password does not match");
+  }
   res.send("Account Created");
 });
 

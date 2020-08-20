@@ -1,10 +1,13 @@
-const fs = require("fs");
-const crypto = require("crypto");
+const fs = require('fs');
+const crypto = require('crypto');
+const util = require('util');
+
+const scrypt = util.promisify(crypto.scrypt);
 
 class UserRepository {
   constructor(filename) {
     if (!filename) {
-      throw new Error("Filename required");
+      throw new Error('Filename required');
     }
 
     this.filename = filename;
@@ -12,7 +15,7 @@ class UserRepository {
     try {
       fs.accessSync(this.filename);
     } catch (error) {
-      fs.writeFileSync(this.filename, "[]");
+      fs.writeFileSync(this.filename, '[]');
     }
   }
 
@@ -21,19 +24,39 @@ class UserRepository {
     // open the file - this.filename.
     return JSON.parse(
       await fs.promises.readFile(this.filename, {
-        encoding: "utf8",
+        encoding: 'utf8',
       })
     );
   }
 
   //  Asynchronous method to create users.
   async create(attributes) {
+    // attributes === {email:'', password:''}
     attributes.ID = this.randomId();
+
+    const salt = crypto.randomBytes(8).toString('hex');
+    const hashedBuffer = await scrypt(attributes.password, salt, 64);
     const userRecords = await this.getAll(); //Accessing the parsed data
-    userRecords.push(attributes); //Pushing the user data into empty array
+    const record = {
+      ...attributes,
+      password: `${hashedBuffer.toString('Hex')}.${salt}`, //.toString used to convert buffer to string
+    };
+    userRecords.push(record); //Pushing the user data into empty array
 
     // calling writeAll method to write the records
     await this.writeAll(userRecords);
+
+    return record;
+  }
+
+  // Password compare
+  async passwordCompare(saved, supplied) {
+    // saved -> Saved password in our database.
+    // supplied -> user supplied password while sign in.
+    const [hashed, salt] = saved.split('.');
+    const suppliedHash = await scrypt(supplied, salt, 64);
+
+    return hashed === suppliedHash.toString('Hex');
   }
 
   //   Method to write the data.
@@ -47,7 +70,7 @@ class UserRepository {
 
   //   Method to generate randomID.
   randomId() {
-    return crypto.randomBytes(4).toString("hex");
+    return crypto.randomBytes(4).toString('hex');
   }
 
   //   Getting user by ID.
@@ -93,7 +116,7 @@ class UserRepository {
   }
 }
 
-module.exports = new UserRepository("users.json");
+module.exports = new UserRepository('users.json');
 
 /*TEST FUNCTION */
 // const test = async () => {

@@ -7,6 +7,8 @@ const {
   requireEmail,
   requirePassword,
   requirePasswordConformation,
+  requireSignInEmail,
+  requireSignInPassword,
 } = require('./validator');
 
 // Creating a express router and hook this router to the express app of index.js file/
@@ -47,24 +49,24 @@ router.get('/signout', (req, res) => {
 
 // signIn
 router.get('/signin', (req, res) => {
-  res.send(signinAuth());
+  res.send(signinAuth({}));
 });
 
-router.post('/signin', async (req, res) => {
-  const { email, password } = req.body;
-  const user = await userRepo.getOneBy({ email });
-  // Check for email id.
-  if (!user) {
-    return res.send('User not found');
-  }
-  // check for password.
-  const validPassword = await userRepo.passwordCompare(user.password, password);
-  if (!validPassword) {
-    return res.send('Password does not match the login ID');
-  }
+router.post(
+  '/signin',
+  [requireSignInEmail, requireSignInPassword],
+  async (req, res) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      return res.send(signinAuth({ errors }));
+    }
 
-  req.session.userId = user.ID;
-  res.send('You are signed In');
-});
+    const { email } = req.body;
+    const user = await userRepo.getOneBy({ email });
+
+    req.session.userId = user.ID;
+    res.send('You are signed In');
+  }
+);
 
 module.exports = router;

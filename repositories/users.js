@@ -1,32 +1,19 @@
 const fs = require('fs');
 const crypto = require('crypto');
 const util = require('util');
+const Repository = require('./repository');
 
 const scrypt = util.promisify(crypto.scrypt);
 
-class UserRepository {
-  constructor(filename) {
-    if (!filename) {
-      throw new Error('Filename required');
-    }
+class UserRepository extends Repository {
+  // Password compare
+  async passwordCompare(saved, supplied) {
+    // saved -> Saved password in our database.
+    // supplied -> user supplied password while sign in.
+    const [hashed, salt] = saved.split('.');
+    const suppliedHash = await scrypt(supplied, salt, 64);
 
-    this.filename = filename;
-    //   checking if the filename already exists
-    try {
-      fs.accessSync(this.filename);
-    } catch (error) {
-      fs.writeFileSync(this.filename, '[]');
-    }
-  }
-
-  //   Asynchronous method to get and read the file.
-  async getAll() {
-    // open the file - this.filename.
-    return JSON.parse(
-      await fs.promises.readFile(this.filename, {
-        encoding: 'utf8',
-      })
-    );
+    return hashed === suppliedHash.toString('Hex');
   }
 
   //  Asynchronous method to create users.
@@ -47,72 +34,6 @@ class UserRepository {
     await this.writeAll(userRecords);
 
     return record;
-  }
-
-  // Password compare
-  async passwordCompare(saved, supplied) {
-    // saved -> Saved password in our database.
-    // supplied -> user supplied password while sign in.
-    const [hashed, salt] = saved.split('.');
-    const suppliedHash = await scrypt(supplied, salt, 64);
-
-    return hashed === suppliedHash.toString('Hex');
-  }
-
-  //   Method to write the data.
-  async writeAll(userRecords) {
-    // convert the attributes into JSON and write it in users.json file.
-    await fs.promises.writeFile(
-      this.filename,
-      JSON.stringify(userRecords, null, 2)
-    );
-  }
-
-  //   Method to generate randomID.
-  randomId() {
-    return crypto.randomBytes(4).toString('hex');
-  }
-
-  //   Getting user by ID.
-  async getOne(id) {
-    const records = await this.getAll();
-    return records.find((record) => record.ID === id);
-  }
-
-  //   Deleting the user by ID.
-  async delete(id) {
-    const records = await this.getAll();
-    const filterRecords = records.filter((record) => record.ID !== id);
-    await this.writeAll(filterRecords);
-  }
-
-  // Update records be ID.
-  async update(id, attributes) {
-    const records = await this.getAll();
-    const record = records.find((record) => record.ID === id);
-    // if no record found
-    if (!record) {
-      throw new Error(`Record with ID${id} is not found`);
-    }
-    Object.assign(record, attributes);
-    await this.writeAll(records);
-  }
-
-  //   Find user by any attributes
-  async getOneBy(filters) {
-    const records = await this.getAll();
-
-    for (let record of records) {
-      let found = true;
-      for (let key in filters) {
-        if (record[key] !== filters[key]) {
-          found = false;
-        }
-      }
-      if (found) {
-        return record;
-      }
-    }
   }
 }
 

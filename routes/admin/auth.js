@@ -1,6 +1,7 @@
 const express = require('express');
 const userRepo = require('../../repositories/users.js');
-const { check, validationResult } = require('express-validator');
+
+const { handleErrors } = require('./middlewares');
 const signupAuth = require('../../HTMLview/admin/authentication/signup');
 const signinAuth = require('../../HTMLview/admin/authentication/signin');
 const {
@@ -23,14 +24,9 @@ router.get('/signup', (req, res) => {
 router.post(
   '/signup',
   [requireEmail, requirePassword, requirePasswordConformation],
+  handleErrors(signupAuth),
   async (req, res) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.send(signupAuth({ req, errors }));
-    }
-
-    const { email, password, passwordConformation } = req.body;
+    const { email, password } = req.body;
 
     // Create a user in our repo.
     const user = await userRepo.create({ email, password });
@@ -55,12 +51,8 @@ router.get('/signin', (req, res) => {
 router.post(
   '/signin',
   [requireSignInEmail, requireSignInPassword],
+  handleErrors(signinAuth),
   async (req, res) => {
-    const errors = validationResult(req);
-    if (!errors.isEmpty()) {
-      return res.send(signinAuth({ errors }));
-    }
-
     const { email } = req.body;
     const user = await userRepo.getOneBy({ email });
 

@@ -2,9 +2,16 @@ const { check } = require('express-validator');
 const userRepo = require('../../repositories/users');
 
 module.exports = {
-  requireProductName: check('name').trim().isLength({ min: 6, max: 20 }),
+  requireProductName: check('title')
+    .trim()
+    .isLength({ min: 6, max: 20 })
+    .withMessage('Must be between 6 and 20 character'),
 
-  requireProductPrice: check('price').trim().toFloat().isFloat({ min: 1 }),
+  requireProductPrice: check('price')
+    .trim()
+    .toFloat()
+    .isFloat({ min: 1 })
+    .withMessage('Must be greater than 1'),
 
   requireEmail: check('email')
     .trim()
@@ -18,10 +25,12 @@ module.exports = {
         throw new Error('Email already in use');
       }
     }),
+
   requirePassword: check('password')
     .trim()
     .isLength({ min: 6, max: 20 })
     .withMessage('Must be between 6 and 20'),
+
   requirePasswordConformation: check('PasswordConformation')
     .trim()
     .isLength({ min: 6, max: 20 })
@@ -31,6 +40,7 @@ module.exports = {
         throw new Error('Password does not match');
       }
     }),
+
   requireSignInEmail: check('email')
     .trim()
     .normalizeEmail()
@@ -42,6 +52,7 @@ module.exports = {
         throw new Error('Invalid user email');
       }
     }),
+
   requireSignInPassword: check('password')
     .trim()
     .custom(async (password, { req }) => {

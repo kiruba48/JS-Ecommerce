@@ -31,13 +31,13 @@ module.exports = {
     .isLength({ min: 6, max: 20 })
     .withMessage('Must be between 6 and 20'),
 
-  requirePasswordConformation: check('PasswordConformation')
+  requirePasswordConfirmation: check('passwordConfirmation')
     .trim()
     .isLength({ min: 6, max: 20 })
-    .withMessage('Must be between 6 and 20')
-    .custom((passwordConformation, { req }) => {
-      if (passwordConformation !== req.body.password) {
-        throw new Error('Password does not match');
+    .withMessage('Must be between 6 and 20 characters')
+    .custom((passwordConfirmation, { req }) => {
+      if (passwordConfirmation !== req.body.password) {
+        throw new Error('Passwords must match');
       }
     }),
 

@@ -38,10 +38,12 @@ module.exports = class Repository {
   //   Method to write the data.
   async writeAll(userRecords) {
     // convert the attributes into JSON and write it in users.json file.
+
     await fs.promises.writeFile(
       this.filename,
       JSON.stringify(userRecords, null, 2)
     );
+    console.log(this.filename);
   }
 
   //   Method to generate randomID.

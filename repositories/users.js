@@ -18,12 +18,14 @@ class UserRepository extends Repository {
 
   //  Asynchronous method to create users.
   async create(attributes) {
+    console.log('works');
     // attributes === {email:'', password:''}
     attributes.ID = this.randomId();
 
     const salt = crypto.randomBytes(8).toString('hex');
     const hashedBuffer = await scrypt(attributes.password, salt, 64);
     const userRecords = await this.getAll(); //Accessing the parsed data
+    console.log(userRecords);
     const record = {
       ...attributes,
       password: `${hashedBuffer.toString('Hex')}.${salt}`, //.toString used to convert buffer to string
